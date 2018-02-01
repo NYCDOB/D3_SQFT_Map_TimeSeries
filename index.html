@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+	<link rel="stylesheet" href="style2.css" type="text/css" media="screen" />
+	<script src="static/chroniton.js"></script>
+	<link href="static/chroniton.css" rel="stylesheet">
+    <title>NB/A1 Square Feet 2000-2017</title>
+    <style>
+      .stroke {
+        fill: none;
+        stroke: #888;
+        stroke-width: 2px;
+      }
+      
+      .land {
+        fill: #222;
+      }
+      
+      .boundary {
+        fill: none;
+        stroke: #fff;
+        stroke-width: .5px;
+      }
+      .collection {
+          fill: gray;
+          stroke: white;
+      }
+
+	#legend {
+		font-size: 12px;
+		position: absolute;
+	}
+	#play, #clock {
+		position: absolute;
+		top: 30px;
+	}
+	#play {
+		top: 50px;
+		left: 15px;
+	}
+	h1 {
+		font-size: 24px;
+		}
+	h2 {
+		font-size: 16px;
+		position: absolute;
+		left: 15px;
+		top: 145px;
+		font-family: "Arial", "Verdana", Sans-serif;
+		font-weight: bold;
+		color: black;
+	}
+	h3 {
+		font-size: 8px;
+	}
+	
+
+	.bar {
+	  fill: #3690C0;
+	}
+
+
+	.axis text {
+	  font: 10px sans-serif;
+	  
+	}
+
+	.axis path,
+	.axis line {
+	  fill: none;
+	  stroke: #000;
+	  shape-rendering: crispEdges;
+	}
+
+
+	.x.axis path {
+	  display: none;
+	}
+	
+	.grid .tick {
+    stroke: lightgrey;
+    stroke-opacity: 0.7;
+    shape-rendering: crispEdges;
+	}
+	.grid path {
+          stroke-width: 0;
+	}
+
+	.tooltip {	
+		position: absolute;			
+		text-align: center;			
+		width: 80px;					
+		height: 43px;					
+		padding: 2px;				
+		font: 12px sans-serif;		
+		background: lightgrey;	
+		border: 0px;		
+		border-radius: 8px;			
+		pointer-events: none;			
+	}
+    </style>
+</head>
+
+<body>
+	<div id="wrapper">	
+		<div id="title-clock">
+			<h1>
+				<font color="#8d9093">
+				NB/A1 Square Feet<br/>
+				Year: </font><font color="#2E648C"><span id="clock">2000</span></font>
+			</h1>	
+		</div>
+		<div class="col-md-6" id="map"></div>
+		<div id="slider"></div> 
+		<div id="permitchart" style="width: 950px; height: 550px"><svg></svg></div>
+		
+	</div>
+
+
+<script src="https://d3js.org/d3.v3.min.js"></script>
+<script src="https://d3js.org/d3.geo.projection.v0.min.js"></script>
+<script src="https://d3js.org/queue.v1.min.js"></script>
+<script src="https://d3js.org/topojson.v1.min.js"></script>
+
+<script>
+//MAP
+  //globals
+
+var startYear = 2000;
+var endYear = 2017;
+var currentYear = startYear;
+
+var width, height, center, projection, path, svg, attributeArray = [], currentAttribute = 0, playing = false, g;
+var legend_labels = ["<200k", "200k - 350k", "350k - 550k", "550k - 800k", "800k - 1M", "1M - 2.5M", ">2.5M"]
+var color_domain = [200000,350000,550000,800000,1000000,2500000]
+var ext_color_domain = [0,200000,350000,550000,800000,1000000,2500000]
+var color = d3.scale.threshold()
+	.domain(color_domain)
+	.range(["#f1eef6","#d0d1e6","#a6bddb","#74a9cf","#3690c0","#0570b0","#034e7b"]);
+
+width = 1064, height = 820;
+center = [width / 2, height / 2];
+
+var projection = d3.geo.mercator()
+    .scale(83000)
+	.center( [-73.9,40.705] )
+    .translate([width / 2, height / 2]);
+
+
+path = d3.geo.path()  // create path generator function
+  .projection(projection);  // add our define projection to it
+svg = d3.select("#map").append("svg")   // append a svg to our html div to hold our map
+  .attr("width", width)
+  .attr("height", height);
+loadData();  // let's load our data next
+g = svg.append("g");
+
+
+function init() {
+  chartUpdate(0);
+  animateMap();
+
+}
+
+function setMap() {
+  width = 700, height = 550;
+  center = [width / 2, height / 2];
+  projection = d3.geo.mercator()   // define our projection with parameters
+    .scale(56200)
+	.center( [-73.9,40.712] )
+    .translate([width / 2, height / 2]);
+  path = d3.geo.path()  // create path generator function
+      .projection(projection);  // add our define projection to it
+  svg = d3.select("#wrapper").append("svg")   // append a svg to our html div to hold our map
+      .attr("width", width)
+      .attr("height", height);
+  loadData();  // let's load our data next
+}
+function loadData() {
+  queue()   // queue function loads all external data files asynchronously 
+    .defer(d3.json, "data/CD_topoJSON.json")  // our geometries
+    .defer(d3.csv, "data/NBA1_SQFT_CD_2000_2017.csv")  // and associated data in csv file
+    .await(processData);   // once all files are loaded, call the processData function passing
+                           // the loaded objects as arguments
+}
+
+function processData(error,hex,hexData) {
+  // function accepts any errors from the queue function as first argument, then
+  // each data object in the order of chained defer() methods above
+  var collections = hex.objects.collection.geometries;  // store the path in variable for ease
+  for (var i in collections) {    // for each geometry object
+    for (var j in hexData) {  // for each row in the CSV
+      if(collections[i].properties.id == hexData[j].id) {   // if they match
+        for(var k in hexData[j]) {   // for each column in the a row within the CSV
+          if(k != 'name' && k != 'id') {  // let's not add the name or id as props since we already have them
+            if(attributeArray.indexOf(k) == -1) { 
+               attributeArray.push(k);  // add new column headings to our array for later
+            }
+            collections[i].properties[k] = Number(hexData[j][k])  // add each CSV column key/value to geometry object
+			//collections[i][k] = Number(hexData[j][k])  // add each CSV column key/value to geometry object
+          } 
+        }
+        break;  // stop looking through the CSV since we made our match
+      }
+    }
+  }
+  
+  d3.select('#clock').html(attributeArray[currentAttribute]);  // populate the clock initially with the current date
+  drawMap(hex);  // let's mug the map now with our newly populated data object
+
+}
+
+function drawMap(hex) {
+    svg.selectAll(".collection")   // select collection objects (which don't exist yet)
+      .data(topojson.feature(hex, hex.objects.collection).features)  // bind data to these non-existent objects
+      .enter().append("path") // prepare data to be appended to paths
+      .attr("class", "collection") // give them a class for styling and access later
+	  .attr("id", function(d) { return "code_" + d.properties.id; }, true)  // give each a unique id for access later
+      .attr("d", path) // create them using the svg path generator defined above
+
+	  .on("mouseover", function(d,i) {
+		var uid = this.id
+			d3.select(this).style("stroke","yellow").style("stroke-width","3px").style("fill-opacity",".7")
+			
+			d3.selectAll(".bar").style("stroke", function(d) {
+				var str = "code_"+d.id.toString();
+				return str == uid ? "yellow" : "";	
+
+			})
+			d3.selectAll(".bar").style("stroke-width", function(d) {
+				var str = "code_"+d.id.toString();
+				return str == uid ? "3px" : "1px";
+			})
+			d3.selectAll(".bar").style("fill-opacity", function(d) {
+				var str = "code_"+d.id.toString();
+				return str == uid ? ".7" : "";
+			})
+		div.transition()
+			.duration(200)
+			.style("opacity", .8);
+		
+		var formatComma = d3.format(",");
+		div.html("CD "+ d.properties.CD + "<br/> NB/A1 SQFT: " + formatComma(d.properties[attributeArray[currentAttribute]]))
+			.style("left", (d3.event.pageX) + "px")
+			.style("top", (d3.event.pageY - 28) + "px");
+	  })
+	  .on("mouseout", function(d,i) {
+			d3.select(this).style("stroke", "white").style("stroke-width","1px").style("fill-opacity","")
+			d3.selectAll(".bar").style("stroke", "").style("stroke-width","").style("fill-opacity","1.0")
+			div.transition()
+				.duration(500)
+				.style("opacity", 0);
+			
+	  })
+	
+    var dataRange = getDataRange(); // get the min/max values from the current date's range of data values
+    d3.selectAll('.collection')  // select all the collections
+	.style("fill", function (d) {
+		return getColor(d.properties[attributeArray[currentAttribute]], dataRange);
+	});
+}
+
+function sequenceMap() {
+  
+    var dataRange = getDataRange(); // get the min/max values from the current date's range of data values
+    d3.selectAll('.collection').transition()  //select all the collections and prepare for a transition to new values
+		.duration(300);
+	d3.selectAll('.collection')
+	.style("fill", function (d) {
+		return getColor(d.properties[attributeArray[currentAttribute]], dataRange);
+	});
+}
+
+function getColor(valueIn, valuesIn) {
+  var nullColor = "#D3D3D3";
+	if (valueIn == undefined || valueIn == 0){
+		return nullColor} else{
+	return color(valueIn)  // return that number to the caller
+	}
+}
+
+
+
+function getDataRange() {
+  // function loops through all the data values from the current data attribute
+  // and returns the min and max values
+  var min = Infinity, max = -Infinity;  
+  d3.selectAll('.collection')
+    .each(function(d,i) {
+      var currentValue = d.properties[attributeArray[currentAttribute]];
+	  
+      if(currentValue <= min && currentValue != -99 && currentValue != 'undefined') {
+        min = currentValue;
+      }
+      if(currentValue >= max && currentValue != -99 && currentValue != 'undefined') {
+        max = currentValue;
+      }
+  });
+  return [min,max]; 
+}
+
+function animateMap() {
+d3.select("#slider") 
+    .call(
+      chroniton()  
+        .domain([new Date(startYear, 1, 1), new Date(endYear, 1, 1)])  
+        .labelFormat(function(date) {
+          return Math.ceil(date.getFullYear());  
+        })
+        .width(600)  
+	.on('change', function(date) { 
+	  var newYear = Math.ceil(date.getFullYear());  
+	  if (newYear != currentYear) { 
+		currentYear = newYear;
+		if(currentAttribute < attributeArray.length-1) {  
+              currentAttribute +=1;  // increment the current attribute counter
+          } else {
+              currentAttribute = 0;  // or reset it to zero
+          }
+		g.selectAll("path")
+		
+		chartUpdate(currentAttribute);
+		sequenceMap();
+		d3.select('#clock').html(currentYear);
+
+	  }
+
+	})
+	.playButton(true) 
+	.playbackRate(0.3)
+	//.loop(true)
+);
+}
+
+var legend = svg.selectAll("g.legend")
+	.data(ext_color_domain)
+	.enter().append("g")
+	.style("font-size", "15px")
+	.style("font-family", "Arial, Helvetica, sans-serif")
+	.attr("class", "legend");
+	
+var ls_w = 30, ls_h = 30;
+legend.append("rect")
+	.attr("x", 45)
+	.attr("y", function(d, i){return height - (i*ls_h) - 2*ls_h;})
+	<!-- .attr('transform', 'translate(-40, -275)') // XY position of legend -->
+	.attr('transform', 'translate(-8, -500)') // XY position of legend
+	.attr("width", ls_w)
+	.attr("height", ls_h)
+	.style("fill", function(d, i){return color(d);})
+	.style("opacity", 0.8);
+legend.append("text")
+	.attr("x", 85)
+	.attr("y", function(d, i){return height - (i*ls_h) - ls_h - 5;})
+	<!-- .attr('transform', 'translate(-40, -277)') // XY position of legend -->
+	.attr('transform', 'translate(-8, -503)') // XY position of legend
+	.text(function(d, i){return legend_labels[i];});
+
+window.onload = init();  // magic starts here
+
+
+
+//BAR CHART
+// Define the div for the tooltip
+
+var div = d3.select("body").append("div")	
+    .attr("class", "tooltip")				
+    .style("opacity", 0);
+	
+var margin = {top: 30, right: 20, bottom: 30, left: 40},
+	width = 1050 - margin.left - margin.right,
+    height = 800 - margin.top - margin.bottom;
+
+var x = d3.scale.ordinal()
+    .rangeRoundBands([0, width], .1);
+
+var y = d3.scale.linear()
+    .range([height, 0]);
+
+var xAxis = d3.svg.axis()
+    .scale(x)
+    .orient("bottom");
+
+var yAxis = d3.svg.axis()
+    .scale(y)
+    .orient("left");
+
+var permitchart = d3.select("#permitchart").append("svg")
+	.attr("width", window.innerWidth + margin.left + margin.right )
+    .attr("height", window.innerHeight + margin.top + margin.bottom )
+	.append("g")
+	.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+// function for the x grid lines
+<!-- function make_x_axis() { -->
+    <!-- return d3.svg.axis() -->
+        <!-- .scale(x) -->
+        <!-- .orient("bottom") -->
+        <!-- .ticks(5) -->
+<!-- } -->
+// function for the y grid lines
+function make_y_axis() {
+  return d3.svg.axis()
+      .scale(y)
+      .orient("left")
+      .ticks(9)
+}	
+
+function chartUpdate(currentAttribute) {
+switch (currentAttribute) {
+case 0:
+d3.csv("data/NBA1_SQFT_CD_2000.csv", type, update)
+break;
+case 1:
+d3.csv("data/NBA1_SQFT_CD_2001.csv", type, update)
+break;
+case 2:
+d3.csv("data/NBA1_SQFT_CD_2002.csv", type, update)
+break;
+case 3:
+d3.csv("data/NBA1_SQFT_CD_2003.csv", type, update)
+break;
+case 4:
+d3.csv("data/NBA1_SQFT_CD_2004.csv", type, update)
+break;
+case 5:
+d3.csv("data/NBA1_SQFT_CD_2005.csv", type, update)
+break;
+case 6:
+d3.csv("data/NBA1_SQFT_CD_2006.csv", type, update)
+break;
+case 7:
+d3.csv("data/NBA1_SQFT_CD_2007.csv", type, update)
+break;
+case 8:
+d3.csv("data/NBA1_SQFT_CD_2008.csv", type, update)
+break;
+case 9:
+d3.csv("data/NBA1_SQFT_CD_2009.csv", type, update)
+break;
+case 10:
+d3.csv("data/NBA1_SQFT_CD_2010.csv", type, update)
+break;
+case 11:
+d3.csv("data/NBA1_SQFT_CD_2011.csv", type, update)
+break;
+case 12:
+d3.csv("data/NBA1_SQFT_CD_2012.csv", type, update)
+break;
+case 13:
+d3.csv("data/NBA1_SQFT_CD_2013.csv", type, update)
+break;
+case 14:
+d3.csv("data/NBA1_SQFT_CD_2014.csv", type, update)
+break;
+case 15:
+d3.csv("data/NBA1_SQFT_CD_2015.csv", type, update)
+break;
+case 16:
+d3.csv("data/NBA1_SQFT_CD_2016.csv", type, update)
+break;
+case 17:
+d3.csv("data/NBA1_SQFT_CD_2017.csv", type, update)
+break;
+}
+}
+function update(error, data) {
+  x.domain(data.map(function(d) { return d.CD; }));
+  y.domain([0, 24000000]);
+
+  	// Draw the x Grid lines
+    <!-- svg.append("g") -->
+        <!-- .attr("class", "grid") -->
+        <!-- .attr("transform", "translate(0," + height + ")") -->
+        <!-- .call(make_x_axis() -->
+            <!-- .tickSize(-height, 0, 0) -->
+            <!-- .tickFormat("") -->
+        <!-- ) -->
+  // Draw the y Grid lines
+    permitchart.append("g")            
+        .attr("class", "grid")
+        .call(make_y_axis()
+            .tickSize(-width+30, 20, 0)
+            .tickFormat("")
+        )
+  
+  
+  permitchart.select(".x.axis").remove();
+  permitchart.append("g")
+      .attr("class", "x axis")
+      .attr("transform", "translate(0," + height + ")")
+
+      .call(xAxis)
+	.selectAll("text")
+	.attr("y", 0)
+	.attr("x", 9)
+	.attr("dy", ".35em")
+	.attr("transform", "rotate(90)")
+	.style("text-anchor", "start");	
+  permitchart.select(".y.axis").remove();
+  permitchart.append("g")
+      .attr("class", "y axis")
+	  .attr("transform", "translate(20)")
+      .call(yAxis);
+  permitchart.selectAll(".bar").remove();
+  permitchart.selectAll(".bar")
+	.transition()
+	.duration(300)
+	.ease("exp")
+	.attr("width", 0).remove()
+
+  permitchart.selectAll(".bar")
+      .data(data)
+    .enter().append("rect")
+	  .on("mouseover", function(d,i) {
+		var uid = data[i].id
+			d3.select(this).style("stroke","yellow").style("stroke-width","3px").style("fill-opacity",".7")
+			d3.selectAll(".collection").style("stroke", function(d) {
+				return d.id == uid ? "yellow" : "";
+				//return d.id == uid ? "3px" : "0px";
+			})
+			d3.selectAll(".collection").style("stroke-width", function(d) {
+				return d.id == uid ? "3px" : "1px";
+			})
+			d3.selectAll(".collection").style("fill-opacity", function(d) {
+				return d.id == uid ? ".7" : "";
+			})
+		div.transition()
+			.duration(200)
+			.style("opacity", .8);
+			
+		var formatComma = d3.format(",");	
+		div.html("CD "+d.CD + "<br/> NB/A1 SQFT: " + formatComma(d.Cnt))
+			.style("left", (d3.event.pageX) + "px")
+			.style("top", (d3.event.pageY - 28) + "px");
+		
+	  })
+	  .on("mouseout", function(d,i) {
+			d3.select(this).style("stroke", "").style("stroke-width","0px").style("fill-opacity","1.0")
+			d3.selectAll(".collection").style("stroke", "white").style("stroke-width","1px").style("fill-opacity","")
+			div.transition()
+				.duration(500)
+				.style("opacity", 0);
+			
+	  })
+      .attr("class", "bar")
+	  .transition()
+	  .duration(300)
+      .attr("x", function(d) { return x(d.CD); })
+      .attr("y", function(d) { return y(d.Cnt); })
+      .attr("height", function(d) { return height - y(d.Cnt); })
+      .attr("width", x.rangeBand());
+
+	  
+}
+function type(d) {
+  d.Cnt = +d.Cnt; // coerce to number
+  return d;
+}
+
+
+</script>
+</body>
+</html>
