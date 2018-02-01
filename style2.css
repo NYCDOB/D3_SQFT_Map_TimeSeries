@@ -62,15 +62,13 @@ path:hover {
 /*#slider {
 	position: absolute;
 	left: 30%;
-	/* margin-left: -500px; */
 	bottom: 70px;
-	/* left: 130px; */
 	width: 600px;
 	height: 70px;
 }*/
 #slider {
 	position: absolute;
-	left: 50%;
+	left: 30%;
 	margin-left: -250px;
 	bottom: 0px;
 	width: 600px;
