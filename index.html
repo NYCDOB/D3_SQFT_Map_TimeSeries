@@ -502,7 +502,8 @@ function update(error, data) {
   permitchart.append("g")
       .attr("class", "y axis")
 	  .attr("transform", "translate(20)")
-      .call(yAxis);
+      .call((yAxis)
+	    .ticks(10, "s"));
   permitchart.selectAll(".bar").remove();
   permitchart.selectAll(".bar")
 	.transition()
