@@ -114,8 +114,9 @@ div.tooltip .val { float: right; color: red; font-weight: bold; width: 75px; tex
 	margin-top: -555px;
 }
 #permitchart {
-	margin-left: 840px;
-	margin-top: -970px;
+	position: absolute;
+	bottom: 550px;
+	margin-left: 850px;
 }	
 
 path.NODATA { fill: #fff; stroke-width: .5px }
