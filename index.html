@@ -36,8 +36,8 @@
 		top: 30px;
 	}
 	#play {
-		top: 50px;
-		left: 15px;
+		top: 42px;
+		left: 130px;
 	}
 	h1 {
 		font-size: 24px;
@@ -73,10 +73,13 @@
 	  shape-rendering: crispEdges;
 	}
 
-
 	#permitchart .x.axis path {
 		display: none;
 	}
+	<!-- .x.axis path { -->
+	  <!-- display: none; -->
+
+	<!-- } -->
 	
 	.grid .tick {
     stroke: lightgrey;
@@ -113,6 +116,7 @@
 		</div>
 		<div class="col-md-6" id="map"></div>
 		<div id="slider"></div> 
+		<button id="play">play</button>
 		<div id="permitchart" style="width: 950px; height: 550px"><svg></svg></div>
 		
 	</div>
@@ -300,37 +304,61 @@ function getDataRange() {
   return [min,max]; 
 }
 
+<!-- function animateMap() { -->
+<!-- d3.select("#slider")  -->
+    <!-- .call( -->
+      <!-- chroniton()   -->
+        <!-- .domain([new Date(startYear, 1, 1), new Date(endYear, 1, 1)])   -->
+        <!-- .labelFormat(function(date) { -->
+          <!-- return Math.ceil(date.getFullYear());   -->
+        <!-- }) -->
+        <!-- .width(600)   -->
+	<!-- .on('change', function(date) {  -->
+	  <!-- var newYear = Math.ceil(date.getFullYear());   -->
+	  <!-- if (newYear != currentYear) {  -->
+		<!-- currentYear = newYear; -->
+		<!-- if(currentAttribute < attributeArray.length-1) {   -->
+              <!-- currentAttribute +=1;  // increment the current attribute counter -->
+          <!-- } else { -->
+              <!-- currentAttribute = 0;  // or reset it to zero -->
+          <!-- } -->
+		<!-- g.selectAll("path") -->
+		
+		<!-- chartUpdate(currentAttribute); -->
+		<!-- sequenceMap(); -->
+		<!-- d3.select('#clock').html(currentYear); -->
+	  <!-- } -->
+	<!-- }) -->
+	<!-- .playButton(true)  -->
+	<!-- .playbackRate(0.3) -->
+	<!-- //.loop(true) -->
+<!-- ); -->
+<!-- } -->
 function animateMap() {
-d3.select("#slider") 
-    .call(
-      chroniton()  
-        .domain([new Date(startYear, 1, 1), new Date(endYear, 1, 1)])  
-        .labelFormat(function(date) {
-          return Math.ceil(date.getFullYear());  
-        })
-        .width(600)  
-	.on('change', function(date) { 
-	  var newYear = Math.ceil(date.getFullYear());  
-	  if (newYear != currentYear) { 
-		currentYear = newYear;
-		if(currentAttribute < attributeArray.length-1) {  
+  var timer;  // create timer object
+  d3.select('#play')  
+    .on('click', function() {  // when user clicks the play button
+      if(playing == false) {  // if the map is currently playing
+        timer = setInterval(function(){   // set a JS interval
+          if(currentAttribute < attributeArray.length-1) {  
               currentAttribute +=1;  // increment the current attribute counter
           } else {
               currentAttribute = 0;  // or reset it to zero
           }
-		g.selectAll("path")
-		
-		chartUpdate(currentAttribute);
-		sequenceMap();
-		d3.select('#clock').html(currentYear);
-
-	  }
-
-	})
-	.playButton(true) 
-	.playbackRate(0.3)
-	//.loop(true)
-);
+		  chartUpdate(currentAttribute);
+          sequenceMap();  // update the representation of the map 
+          d3.select('#clock').html(attributeArray[currentAttribute]);  // update the clock
+        }, 2000);
+      
+        d3.select(this).html('stop');  // change the button label to stop
+        playing = true;   // change the status of the animation
+      } else {    // else if is currently playing
+        clearInterval(timer);   // stop the animation by clearing the interval
+        d3.select(this).html('play');   // change the button label to play
+        playing = false;   // change the status again
+      }
+  });
+  
 }
 
 var legend = svg.selectAll("g.legend")
@@ -465,6 +493,64 @@ d3.csv("data/NBA1_SQFT_CD_2017.csv", type, update)
 break;
 }
 }
+<!-- function chartUpdate(currentYear) { -->
+<!-- switch (currentYear) { -->
+<!-- case 2000: -->
+<!-- d3.csv("data/NBA1_SQFT_CD_2000.csv", type, update) -->
+<!-- break; -->
+<!-- case 2001: -->
+<!-- d3.csv("data/NBA1_SQFT_CD_2001.csv", type, update) -->
+<!-- break; -->
+<!-- case 2002: -->
+<!-- d3.csv("data/NBA1_SQFT_CD_2002.csv", type, update) -->
+<!-- break; -->
+<!-- case 2003: -->
+<!-- d3.csv("data/NBA1_SQFT_CD_2003.csv", type, update) -->
+<!-- break; -->
+<!-- case 2004: -->
+<!-- d3.csv("data/NBA1_SQFT_CD_2004.csv", type, update) -->
+<!-- break; -->
+<!-- case 2005: -->
+<!-- d3.csv("data/NBA1_SQFT_CD_2005.csv", type, update) -->
+<!-- break; -->
+<!-- case 2006: -->
+<!-- d3.csv("data/NBA1_SQFT_CD_2006.csv", type, update) -->
+<!-- break; -->
+<!-- case 2007: -->
+<!-- d3.csv("data/NBA1_SQFT_CD_2007.csv", type, update) -->
+<!-- break; -->
+<!-- case 2008: -->
+<!-- d3.csv("data/NBA1_SQFT_CD_2008.csv", type, update) -->
+<!-- break; -->
+<!-- case 2009: -->
+<!-- d3.csv("data/NBA1_SQFT_CD_2009.csv", type, update) -->
+<!-- break; -->
+<!-- case 2010: -->
+<!-- d3.csv("data/NBA1_SQFT_CD_2010.csv", type, update) -->
+<!-- break; -->
+<!-- case 2011: -->
+<!-- d3.csv("data/NBA1_SQFT_CD_2011.csv", type, update) -->
+<!-- break; -->
+<!-- case 2012: -->
+<!-- d3.csv("data/NBA1_SQFT_CD_2012.csv", type, update) -->
+<!-- break; -->
+<!-- case 2013: -->
+<!-- d3.csv("data/NBA1_SQFT_CD_2013.csv", type, update) -->
+<!-- break; -->
+<!-- case 2014: -->
+<!-- d3.csv("data/NBA1_SQFT_CD_2014.csv", type, update) -->
+<!-- break; -->
+<!-- case 2015: -->
+<!-- d3.csv("data/NBA1_SQFT_CD_2015.csv", type, update) -->
+<!-- break; -->
+<!-- case 2016: -->
+<!-- d3.csv("data/NBA1_SQFT_CD_2016.csv", type, update) -->
+<!-- break; -->
+<!-- case 2017: -->
+<!-- d3.csv("data/NBA1_SQFT_CD_2017.csv", type, update) -->
+<!-- break; -->
+<!-- } -->
+<!-- } -->
 function update(error, data) {
   x.domain(data.map(function(d) { return d.CD; }));
   y.domain([0, 24000000]);
@@ -490,7 +576,6 @@ function update(error, data) {
   permitchart.append("g")
       .attr("class", "x axis")
       .attr("transform", "translate(0," + height + ")")
-
       .call(xAxis)
 	.selectAll("text")
 	.attr("y", 0)
@@ -498,12 +583,14 @@ function update(error, data) {
 	.attr("dy", ".35em")
 	.attr("transform", "rotate(90)")
 	.style("text-anchor", "start");	
+	  
   permitchart.select(".y.axis").remove();
   permitchart.append("g")
       .attr("class", "y axis")
 	  .attr("transform", "translate(20)")
       .call((yAxis)
 	    .ticks(10, "s"));
+		
   permitchart.selectAll(".bar").remove();
   permitchart.selectAll(".bar")
 	.transition()
@@ -531,7 +618,8 @@ function update(error, data) {
 			.duration(200)
 			.style("opacity", .8);
 			
-		var formatComma = d3.format(",");	
+		var formatComma = d3.format(",");
+		var formatMk = d3.format(".0s");
 		div.html("CD "+d.CD + "<br/> NB/A1 SQFT: " + formatComma(d.Cnt))
 			.style("left", (d3.event.pageX) + "px")
 			.style("top", (d3.event.pageY - 28) + "px");
