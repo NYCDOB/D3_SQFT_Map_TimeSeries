@@ -116,7 +116,7 @@
 		</div>
 		<div class="col-md-6" id="map"></div>
 		<div id="slider"></div> 
-		<button id="play">play</button>
+		<!-- <button id="play">play</button> -->
 		<div id="permitchart" style="width: 950px; height: 550px"><svg></svg></div>
 		
 	</div>
@@ -304,63 +304,66 @@ function getDataRange() {
   return [min,max]; 
 }
 
-<!-- function animateMap() { -->
-<!-- d3.select("#slider")  -->
-    <!-- .call( -->
-      <!-- chroniton()   -->
-        <!-- .domain([new Date(startYear, 1, 1), new Date(endYear, 1, 1)])   -->
-        <!-- .labelFormat(function(date) { -->
-          <!-- return Math.ceil(date.getFullYear());   -->
-        <!-- }) -->
-        <!-- .width(600)   -->
-	<!-- .on('change', function(date) {  -->
-	  <!-- var newYear = Math.ceil(date.getFullYear());   -->
-	  <!-- if (newYear != currentYear) {  -->
-		<!-- currentYear = newYear; -->
+function animateMap() {
+d3.select("#slider") 
+    .call(
+      chroniton()  
+        .domain([new Date(startYear, 1, 1), new Date(endYear, 1, 1)])  
+        .labelFormat(function(date) {
+          return Math.ceil(date.getFullYear());  
+        })
+        .width(600)  
+	.on('change', function(date) { 
+	  var newYear = Math.ceil(date.getFullYear());  
+	  if (newYear != currentYear) { 
+		currentYear = newYear;
+		currentAttribute = currentYear - 2000;
 		<!-- if(currentAttribute < attributeArray.length-1) {   -->
+              <!-- currentAttribute +=1;  // increment the current attribute counter -->
+		  <!-- } else if (currentAttribute > attributeArray.length-1) { -->
+			  <!-- currentAttribute--; -->
+          <!-- } else { -->
+              <!-- currentAttribute = 0;  // or reset it to zero -->
+          <!-- } -->
+		g.selectAll("path")
+		
+		chartUpdate(currentAttribute);
+		sequenceMap();
+		d3.select('#clock').html(currentYear);
+	  }
+	})
+	.playButton(true) 
+	.playbackRate(0.3)
+	//.loop(true)
+);
+}
+<!-- function animateMap() { -->
+  <!-- var timer;  // create timer object -->
+  <!-- d3.select('#play')   -->
+    <!-- .on('click', function() {  // when user clicks the play button -->
+      <!-- if(playing == false) {  // if the map is currently playing -->
+        <!-- timer = setInterval(function(){   // set a JS interval -->
+          <!-- if(currentAttribute < attributeArray.length-1) {   -->
               <!-- currentAttribute +=1;  // increment the current attribute counter -->
           <!-- } else { -->
               <!-- currentAttribute = 0;  // or reset it to zero -->
           <!-- } -->
-		<!-- g.selectAll("path") -->
-		
-		<!-- chartUpdate(currentAttribute); -->
-		<!-- sequenceMap(); -->
-		<!-- d3.select('#clock').html(currentYear); -->
-	  <!-- } -->
-	<!-- }) -->
-	<!-- .playButton(true)  -->
-	<!-- .playbackRate(0.3) -->
-	<!-- //.loop(true) -->
-<!-- ); -->
-<!-- } -->
-function animateMap() {
-  var timer;  // create timer object
-  d3.select('#play')  
-    .on('click', function() {  // when user clicks the play button
-      if(playing == false) {  // if the map is currently playing
-        timer = setInterval(function(){   // set a JS interval
-          if(currentAttribute < attributeArray.length-1) {  
-              currentAttribute +=1;  // increment the current attribute counter
-          } else {
-              currentAttribute = 0;  // or reset it to zero
-          }
-		  chartUpdate(currentAttribute);
-          sequenceMap();  // update the representation of the map 
-          d3.select('#clock').html(attributeArray[currentAttribute]);  // update the clock
-        }, 2000);
+		  <!-- chartUpdate(currentAttribute); -->
+          <!-- sequenceMap();  // update the representation of the map  -->
+          <!-- d3.select('#clock').html(attributeArray[currentAttribute]);  // update the clock -->
+        <!-- }, 2000); -->
       
-        d3.select(this).html('stop');  // change the button label to stop
-        playing = true;   // change the status of the animation
-      } else {    // else if is currently playing
-        clearInterval(timer);   // stop the animation by clearing the interval
-        d3.select(this).html('play');   // change the button label to play
-        playing = false;   // change the status again
-      }
-  });
+        <!-- d3.select(this).html('stop');  // change the button label to stop -->
+        <!-- playing = true;   // change the status of the animation -->
+      <!-- } else {    // else if is currently playing -->
+        <!-- clearInterval(timer);   // stop the animation by clearing the interval -->
+        <!-- d3.select(this).html('play');   // change the button label to play -->
+        <!-- playing = false;   // change the status again -->
+      <!-- } -->
+  <!-- }); -->
   
-}
-
+<!-- } -->
+	
 var legend = svg.selectAll("g.legend")
 	.data(ext_color_domain)
 	.enter().append("g")
